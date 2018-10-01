@@ -1,21 +1,25 @@
 package com.hsbc;
 
-import com.hsbc.image.CommentReaderRepository;
+import com.hsbc.image.Comment;
 import com.hsbc.image.ImageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 
 @Controller
 public class HomeController {
@@ -26,11 +30,11 @@ public class HomeController {
 
     private final ImageService imageService;
 
-    private final CommentReaderRepository repository;
+    private final RestTemplate restTemplate;
 
-    public HomeController(ImageService imageService, CommentReaderRepository repository){
+    public HomeController(ImageService imageService, RestTemplate restTemplate){
         this.imageService = imageService;
-        this.repository = repository;
+        this.restTemplate = restTemplate;
     }
 
     @GetMapping(value=BASE_PATH + "/" + FILENAME + "/raw", produces = MediaType.IMAGE_JPEG_VALUE)
@@ -64,11 +68,19 @@ public class HomeController {
 
     @GetMapping("/")
     public Mono<String> index(Model model){
+
         model.addAttribute("images",
                 imageService.findAllImages()
                 .flatMap(image -> Mono.just(image)
-                .zipWith(repository.findByImageId(
-                        image.getId()).collectList()))
+                .zipWith( Mono.just(
+                        restTemplate.exchange(
+                                "http://COMMENTS/comments/{imageId}",
+                                HttpMethod.GET,
+                                null,
+                                new ParameterizedTypeReference<List<Comment>>() {},
+                                image.getId()
+                        ).getBody())
+                ))
                 .map(imageAndComments -> new HashMap<String, Object>(){{
                     System.out.println(imageAndComments.getT1().getId());
                     System.out.println(imageAndComments.getT1().getName());
