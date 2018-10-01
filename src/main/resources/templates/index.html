@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://wwww.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Index</title>
+    <link rel="stylesheet" href="main.css"/>
+</head>
+<body>
+    <h1>Spring Boot Demo Index</h1>
+    <h2>Test123456789</h2>
+    <h3>Using the LiveReload plugin in your browser will speed up efforts.</h3>
+    <h4 th:text="${extra}"></h4>
+    <div>
+        <table>
+            <thead>
+                <tr>
+                    <th>
+                        Id
+                    </th>
+                    <th>
+                        Name
+                    </th>
+                    <th>
+                        Image
+                    </th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="image : ${images}">
+                    <td th:text="${image.id}"></td>
+                    <td th:text="${image.name}"></td>
+                    <td>
+                        <a th:href="@{'/image/' + ${image.name} + '/raw'}">
+                            <img th:src="@{'/image/' + ${image.name} + '/raw'}" class="thumbnail"/>
+                        </a>
+                    </td>
+                    <td>
+                        <form th:method="delete" th:action="@{'/image/' + ${image.name}}">
+                            <input type="submit" value="Delete"/>
+                        </form>
+                    </td>
+                    <td>
+                        <ul>
+                            <li th:each="comment : ${image.comments}" th:text="${comment.comment}"/>
+                        </ul>
+                    </td>
+                    <td>
+                        <form th:method="post" th:action="@{'/comments'}">
+                            <input name="comment" value="" type="text"/>
+                            <input name="imageId" th:value="${image.id}" type="hidden"/>
+                            <input type="submit"/>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+
+        </table>
+
+        <form method="post" enctype="multipart/form-data" action="/image">
+            <p><input type="file" name="file"/></p>
+            <p><input type="submit" value="Upload"/></p>
+        </form>
+
+    </div>
+
+</body>
+</html>
