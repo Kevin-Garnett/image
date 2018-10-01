@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://wwww.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Person</title>
+</head>
+<body>
+    <h1>Test Form With Flux - Person</h1>
+    <div>
+        <table>
+            <thead>
+                <tr>
+                    <th>
+                        Id
+                    </th>
+                    <th>
+                        Name
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="person : ${persons}">
+                    <td th:text="${person.id}"></td>
+                    <td th:text="${person.name}"></td>
+                </tr>
+            </tbody>
+
+        </table>
+
+        <form th:method="post" th:action="@{'/create'}">
+            <input id="person1_name" name="name" value="" type="text"/>
+            <input id="person1_id" name="id" value="" type="text"/>
+
+            <input id="person2_name" name="name" value="" type="text"/>
+            <input id="person2_id" name="id" value="" type="text"/>
+
+            <input type="submit"/>
+        </form>
+
+    </div>
+
+</body>
+</html>
