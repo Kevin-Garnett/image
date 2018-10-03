@@ -1,25 +1,21 @@
 package com.hsbc;
 
-import com.hsbc.image.Comment;
+import com.hsbc.image.CommentHelper;
 import com.hsbc.image.ImageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 
 @Controller
 public class HomeController {
@@ -30,11 +26,11 @@ public class HomeController {
 
     private final ImageService imageService;
 
-    private final RestTemplate restTemplate;
+    private final CommentHelper commentHelper;
 
-    public HomeController(ImageService imageService, RestTemplate restTemplate){
+    public HomeController(ImageService imageService, CommentHelper commentHelper){
         this.imageService = imageService;
-        this.restTemplate = restTemplate;
+        this.commentHelper = commentHelper;
     }
 
     @GetMapping(value=BASE_PATH + "/" + FILENAME + "/raw", produces = MediaType.IMAGE_JPEG_VALUE)
@@ -71,24 +67,31 @@ public class HomeController {
 
         model.addAttribute("images",
                 imageService.findAllImages()
-                .flatMap(image -> Mono.just(image)
-                .zipWith( Mono.just(
+                .flatMap(image -> Mono.just(image))
+                //.zipWith( Mono.just(
+                        /*
                         restTemplate.exchange(
                                 "http://COMMENTS/comments/{imageId}",
                                 HttpMethod.GET,
                                 null,
                                 new ParameterizedTypeReference<List<Comment>>() {},
                                 image.getId()
-                        ).getBody())
-                ))
-                .map(imageAndComments -> new HashMap<String, Object>(){{
-                    System.out.println(imageAndComments.getT1().getId());
-                    System.out.println(imageAndComments.getT1().getName());
-                    System.out.println(imageAndComments.getT2());
+                        ).getBody()
+                        */
+                //        commentHelper.getComments(image)
+                //)))
+                .map(image -> new HashMap<String, Object>(){{
+                    //System.out.println(imageAndComments.getT1().getId());
+                    //System.out.println(imageAndComments.getT1().getName());
+                    //System.out.println(imageAndComments.getT2());
 
-                        put("id", imageAndComments.getT1().getId());
-                        put("name", imageAndComments.getT1().getName());
-                        put("comments", imageAndComments.getT2());
+                        //put("id", imageAndComments.getT1().getId());
+                        //put("name", imageAndComments.getT1().getName());
+                        //put("comments", imageAndComments.getT2());
+
+                    put("id", image.getId());
+                    put("name", image.getName());
+                    put("comments", commentHelper.getComments(image));
                         }
                     }
                 )
@@ -98,5 +101,7 @@ public class HomeController {
         model.addAttribute("extra", "DevTools can also detect code changes too");
         return Mono.just("index");
     }
+
+
 
 }
