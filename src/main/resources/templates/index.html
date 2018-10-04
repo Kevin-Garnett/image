@@ -43,16 +43,22 @@
                         </form>
                     </td>
                     <td>
-                        <ul>
-                            <li th:each="comment : ${image.comments}" th:text="${comment.comment}"/>
+                        <ul th:id="'comments-' + ${image.id}">
+                            <!--<li th:each="comment : ${image.comments}" th:text="${comment.comment}"/>-->
                         </ul>
                     </td>
                     <td>
+                        <!--This is synchronize call-->
+                        <!--
                         <form th:method="post" th:action="@{'/comments'}">
                             <input name="comment" value="" type="text"/>
                             <input name="imageId" th:value="${image.id}" type="hidden"/>
                             <input type="submit"/>
                         </form>
+                        -->
+                        <!--Change to use Asynchronized call-->
+                        <input th:id="'comment-' + ${image.id}" type="text" value="" />
+                        <button th:id="${image.id}" class="comment">Submit</button>
                     </td>
                 </tr>
             </tbody>
@@ -66,5 +72,75 @@
 
     </div>
 
+    <div id="chatBox">
+        Greetings!
+        <br/>
+        <textarea id="chatDisplay" rows="10" cols="80" disabled="true"></textarea>
+        <br/>
+        <input id="chatInput" type="text" style="width: 500px" value="" />
+        <br/>
+        <button id="chatButton">send</button>
+        <br/>
+    </div>
+
 </body>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    (function(){
+        var socket = new WebSocket('ws://localhost:8200/topic/comments.new');
+        socket.onopen = function(event){
+            console.log('Connected to chat service!');
+            console.log(event);
+        }
+
+        socket.onmessage = function(event){
+            console.log('Received ' + event.data + '!');
+            var parsedMessage = JSON.parse(event.data);
+            var ul = document.getElementById('comments-' + parsedMessage.imageId);
+            var li = document.createElement("li");
+            li.appendChild(document.createTextNode(parsedMessage.comment));
+            ul.appendChild(li);
+        }
+
+        //Register a handler for each button to make an AJAX call
+        document.querySelectorAll('button.comment')
+            .forEach(function(button){
+                button.addEventListener('click', function(){
+                    var comment = document.getElementById('comment-' + button.id);
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', /*[[@{'/comments'}]]*/'', true);
+
+                    var formData = new FormData();
+                    formData.append('comment', comment.value);
+                    formData.append('imageId', button.id);
+
+                    xhr.send(formData);
+
+                    comment.value = '';
+                });
+            });
+
+        var outboundChatMessage = new WebSocket('ws://localhost:8200/app/chatMessage.new');
+        // Post new chat messages
+        outboundChatMessage.onopen = function(event){
+            document.getElementById('chatButton')
+                .addEventListener('click', function(){
+                    var chatInput = document.getElementById('chatInput');
+                    console.log('Publishing "' + chatInput.value + '"');
+                    outboundChatMessage.send(chatInput.value);
+                    chatInput.value = '';
+                    chatInput.focus();
+                });
+        };
+
+        var inboundChatMessage = new WebSocket('ws://localhost:8200/topic/chatMessage.new');
+        // Listen for new chat messages
+        inboundChatMessage.onmessage = function(event){
+            console.log('Received ' + event.data);
+            var chatDisplay = document.getElementById('chatDisplay');
+            chatDisplay.value = chatDisplay.value + event.data + '\n';
+        };
+    })();
+    /*]]>*/
+</script>
 </html>
