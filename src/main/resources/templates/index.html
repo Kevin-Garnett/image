@@ -10,6 +10,9 @@
     <h2>Test123456789</h2>
     <h3>Using the LiveReload plugin in your browser will speed up efforts.</h3>
     <h4 th:text="${extra}"></h4>
+    <input id="username" type="text"/>
+    <button id="connect">Connect</button>
+    <button id="disconnect" style="display:none">Disconnect</button>
     <div>
         <table>
             <thead>
@@ -72,7 +75,7 @@
 
     </div>
 
-    <div id="chatBox">
+    <div id="chatBox" style="display: none">
         Greetings!
         <br/>
         <textarea id="chatDisplay" rows="10" cols="80" disabled="true"></textarea>
@@ -120,26 +123,75 @@
                 });
             });
 
-        var outboundChatMessage = new WebSocket('ws://localhost:8200/app/chatMessage.new');
+        //var outboundChatMessage = new WebSocket('ws://localhost:8200/app/chatMessage.new?dummy=&');
         // Post new chat messages
-        outboundChatMessage.onopen = function(event){
-            document.getElementById('chatButton')
-                .addEventListener('click', function(){
-                    var chatInput = document.getElementById('chatInput');
-                    console.log('Publishing "' + chatInput.value + '"');
-                    outboundChatMessage.send(chatInput.value);
-                    chatInput.value = '';
-                    chatInput.focus();
-                });
-        };
+        //outboundChatMessage.onopen = function(event){
+        //    document.getElementById('chatButton')
+        //        .addEventListener('click', function(){
+        //            var chatInput = document.getElementById('chatInput');
+        //            console.log('Publishing "' + chatInput.value + '"');
+        //            outboundChatMessage.send(chatInput.value);
+        //            chatInput.value = '';
+        //            chatInput.focus();
+        //        });
+        //};
 
-        var inboundChatMessage = new WebSocket('ws://localhost:8200/topic/chatMessage.new');
+        //var inboundChatMessage = new WebSocket('ws://localhost:8200/topic/chatMessage.new?dummy=&');
         // Listen for new chat messages
-        inboundChatMessage.onmessage = function(event){
-            console.log('Received ' + event.data);
-            var chatDisplay = document.getElementById('chatDisplay');
-            chatDisplay.value = chatDisplay.value + event.data + '\n';
-        };
+        //inboundChatMessage.onmessage = function(event){
+        //    console.log('Received ' + event.data);
+        //    var chatDisplay = document.getElementById('chatDisplay');
+        //    chatDisplay.value = chatDisplay.value + event.data + '\n';
+        //};
+        var outboundChatMessage = null;
+        var inboundChatMessage = null;
+        document.getElementById('connect')
+            .addEventListener('click', function(){
+                document.getElementById('connect').style.display = 'none';
+                document.getElementById('disconnect').style.display = 'inline';
+
+                var usernameInput = document.getElementById('username');
+
+                document.getElementById('chatBox').style.display = 'inline';
+
+                inboundChatMessage = new WebSocket('ws://localhost:8200/topic/chatMessage.new?user='+usernameInput.value +'&');
+                inboundChatMessage.onmessage = function (event) {
+                    console.log('Received ' + event.data);
+                    var chatDisplay = document.getElementById('chatDisplay');
+                    chatDisplay.value = chatDisplay.value + event.data + '\n';
+                }
+
+                outboundChatMessage = new WebSocket('ws://localhost:8200/app/chatMessage.new?user='+usernameInput.value +'&');
+                // Post new chat messages
+                outboundChatMessage.onopen = function(event){
+                    document.getElementById('chatButton')
+                        .addEventListener('click', function(){
+                            var chatInput = document.getElementById('chatInput');
+                            console.log('Publishing "' + chatInput.value + '"');
+                            outboundChatMessage.send(chatInput.value);
+                            chatInput.value = '';
+                            chatInput.focus();
+                        });
+                };
+
+            });
+
+        document.getElementById('disconnect')
+            .addEventListener('click', function(){
+                document.getElementById('connect').style.display = 'inline';
+                document.getElementById('disconnect').style.display = 'none';
+                document.getElementById('chatBox').style.display = 'none';
+
+                if(socket != null){
+                    socket.close();
+                }
+                if(outboundChatMessage != null){
+                    outboundChatMessage.close();
+                }
+                if(inboundChatMessage != null){
+                    inboundChatMessage.close();
+                }
+            });
     })();
     /*]]>*/
 </script>
